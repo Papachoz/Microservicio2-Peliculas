@@ -111,7 +111,6 @@ for (let i = 1; i <= 20000; i++) {
   )
   const movieId = result.insertId
 
-  // 1-3 géneros
   const numGenres  = 1 + Math.floor(Math.random() * 3)
   const usedGenres = new Set()
   for (let g = 0; g < numGenres; g++) {
@@ -122,11 +121,9 @@ for (let i = 1; i <= 20000; i++) {
     }
   }
 
-  // 1 director
   const dId = directorIds[Math.floor(Math.random() * directorIds.length)]
   await db.execute('INSERT IGNORE INTO movie_directors (movie_id, director_id) VALUES (?, ?)', [movieId, dId])
 
-  // 1-4 actores
   const numActors  = 1 + Math.floor(Math.random() * 4)
   const usedActors = new Set()
   for (let a = 0; a < numActors; a++) {
@@ -137,7 +134,6 @@ for (let i = 1; i <= 20000; i++) {
     }
   }
 
-  // 1-5 reseñas
   const numReviews = 1 + Math.floor(Math.random() * 5)
   for (let r = 0; r < numReviews; r++) {
     const author  = authors[Math.floor(Math.random() * authors.length)]
@@ -153,4 +149,3 @@ for (let i = 1; i <= 20000; i++) {
 }
 
 console.log('Seed completado.')
-process.exit(0)

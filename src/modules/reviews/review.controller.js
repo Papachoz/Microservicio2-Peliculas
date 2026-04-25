@@ -1,16 +1,16 @@
 import { db } from '../../db/database.js'
 
 export async function getReviewsByMovie(request, reply) {
-  const { id } = request.params
+  const id = Number(request.params.id)
   const { page = 1, limit = 20 } = request.query
 
   const [movies] = await db.execute('SELECT id FROM movies WHERE id = ?', [id])
   if (movies.length === 0) return reply.status(404).send({ error: 'Película no encontrada' })
 
-  const [reviews] = await db.execute(
-    'SELECT * FROM reviews WHERE movie_id = ? LIMIT ? OFFSET ?',
-    [id, Number(limit), (Number(page) - 1) * Number(limit)]
-  )
+  const [reviews] = await db.query(
+  `SELECT * FROM reviews WHERE movie_id = ? LIMIT ${Number(limit)} OFFSET ${(Number(page) - 1) * Number(limit)}`,
+  [id]
+)
 
   const [total] = await db.execute(
     'SELECT COUNT(*) as count FROM reviews WHERE movie_id = ?', [id]
@@ -20,7 +20,7 @@ export async function getReviewsByMovie(request, reply) {
 }
 
 export async function createReview(request, reply) {
-  const { id } = request.params
+  const id = Number(request.params.id)
   const { author, rating, comment } = request.body
 
   const [movies] = await db.execute('SELECT id FROM movies WHERE id = ?', [id])

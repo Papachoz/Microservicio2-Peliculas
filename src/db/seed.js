@@ -99,7 +99,7 @@ for (const a of actors) {
 console.log('Insertando 20,000 películas...')
 const genreNames = Object.keys(genreIds)
 
-for (let i = 1; i <= 20000; i++) {
+for (let i = 1; i <= 1000; i++) {
   const year     = 1950 + Math.floor(Math.random() * 75)
   const duration = 80   + Math.floor(Math.random() * 120)
   const title    = `Película ${i} (${year})`

@@ -99,53 +99,65 @@ for (const a of actors) {
 console.log('Insertando 20,000 películas...')
 const genreNames = Object.keys(genreIds)
 
-for (let i = 1; i <= 1000; i++) {
+const BATCH = 500
+let movieBatch = [], genreBatch = [], directorBatch = [], actorBatch = [], reviewBatch = []
+
+for (let i = 1; i <= 20000; i++) {
   const year     = 1950 + Math.floor(Math.random() * 75)
   const duration = 80   + Math.floor(Math.random() * 120)
   const title    = `Película ${i} (${year})`
   const synopsis = `Sinopsis de la película número ${i}.`
+  movieBatch.push([title, year, duration, synopsis])
 
-  const [result]  = await db.execute(
-    'INSERT INTO movies (title, year, duration, synopsis) VALUES (?, ?, ?, ?)',
-    [title, year, duration, synopsis]
-  )
-  const movieId = result.insertId
-
-  const numGenres  = 1 + Math.floor(Math.random() * 3)
-  const usedGenres = new Set()
-  for (let g = 0; g < numGenres; g++) {
-    const gName = genreNames[Math.floor(Math.random() * genreNames.length)]
-    if (!usedGenres.has(gName)) {
-      await db.execute('INSERT IGNORE INTO movie_genres (movie_id, genre_id) VALUES (?, ?)', [movieId, genreIds[gName]])
-      usedGenres.add(gName)
-    }
-  }
-
-  const dId = directorIds[Math.floor(Math.random() * directorIds.length)]
-  await db.execute('INSERT IGNORE INTO movie_directors (movie_id, director_id) VALUES (?, ?)', [movieId, dId])
-
-  const numActors  = 1 + Math.floor(Math.random() * 4)
-  const usedActors = new Set()
-  for (let a = 0; a < numActors; a++) {
-    const aId = actorIds[Math.floor(Math.random() * actorIds.length)]
-    if (!usedActors.has(aId)) {
-      await db.execute('INSERT IGNORE INTO movie_actors (movie_id, actor_id, role) VALUES (?, ?, ?)', [movieId, aId, `Personaje ${a + 1}`])
-      usedActors.add(aId)
-    }
-  }
-
-  const numReviews = 1 + Math.floor(Math.random() * 5)
-  for (let r = 0; r < numReviews; r++) {
-    const author  = authors[Math.floor(Math.random() * authors.length)]
-    const rating  = Math.round(Math.random() * 100) / 10
-    const comment = comments[Math.floor(Math.random() * comments.length)]
-    await db.execute(
-      'INSERT INTO reviews (movie_id, author, rating, comment) VALUES (?, ?, ?, ?)',
-      [movieId, author, rating, comment]
+  if (movieBatch.length === BATCH || i === 20000) {
+    const [result] = await db.query(
+      'INSERT INTO movies (title, year, duration, synopsis) VALUES ?',
+      [movieBatch]
     )
-  }
+    const firstId = result.insertId
 
-  if (i % 1000 === 0) console.log(`${i}/20000 películas insertadas...`)
+
+    for (let j = 0; j < movieBatch.length; j++) {
+      const movieId = firstId + j
+
+      const numGenres = 1 + Math.floor(Math.random() * 3)
+      const usedGenres = new Set()
+      for (let g = 0; g < numGenres; g++) {
+        const gName = genreNames[Math.floor(Math.random() * genreNames.length)]
+        if (!usedGenres.has(gName)) { genreBatch.push([movieId, genreIds[gName]]); usedGenres.add(gName) }
+      }
+
+
+      const dId = directorIds[Math.floor(Math.random() * directorIds.length)]
+      directorBatch.push([movieId, dId])
+
+     
+      const numActors = 1 + Math.floor(Math.random() * 4)
+      const usedActors = new Set()
+      for (let a = 0; a < numActors; a++) {
+        const aId = actorIds[Math.floor(Math.random() * actorIds.length)]
+        if (!usedActors.has(aId)) { actorBatch.push([movieId, aId, `Personaje ${a + 1}`]); usedActors.add(aId) }
+      }
+
+      const numReviews = 1 + Math.floor(Math.random() * 5)
+      for (let r = 0; r < numReviews; r++) {
+        const author  = authors[Math.floor(Math.random() * authors.length)]
+        const rating  = Math.round(Math.random() * 100) / 10
+        const comment = comments[Math.floor(Math.random() * comments.length)]
+        reviewBatch.push([movieId, author, rating, comment])
+      }
+    }
+
+    if (genreBatch.length)    await db.query('INSERT IGNORE INTO movie_genres (movie_id, genre_id) VALUES ?', [genreBatch])
+    if (directorBatch.length) await db.query('INSERT IGNORE INTO movie_directors (movie_id, director_id) VALUES ?', [directorBatch])
+    if (actorBatch.length)    await db.query('INSERT IGNORE INTO movie_actors (movie_id, actor_id, role) VALUES ?', [actorBatch])
+    if (reviewBatch.length)   await db.query('INSERT INTO reviews (movie_id, author, rating, comment) VALUES ?', [reviewBatch])
+
+    console.log(`${i}/20000 películas insertadas...`)
+    movieBatch = []; genreBatch = []; directorBatch = []; actorBatch = []; reviewBatch = []
+  }
 }
 
+
 console.log('Seed completado.')
+process.exit(0)
